@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/foundation.dart';
 import 'package:notes/models/note.dart';
 import 'package:notes/services/note_service.dart';
@@ -30,7 +28,12 @@ class NoteChangeNotifier extends ChangeNotifier {
     load();
   }
 
-  Future<void> delete(int key) async {
+  Future<void> update(dynamic key, Note note) async {
+    await _service.update(key, note);
+    load();
+  }
+
+  Future<void> delete(dynamic key) async {
     await _service.delete(key);
     load();
   }

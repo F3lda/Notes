@@ -16,6 +16,7 @@ Future<void> main() async {
   // Register the User adapter
   Hive.registerAdapter(NoteAdapter());
 
+  //await Hive.deleteBoxFromDisk('notes');
   const notesHiveBox = 'notes';
   await Hive.openBox<Note>(notesHiveBox);
 
