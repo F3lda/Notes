@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:notes/change_notifiers/notes_change_notifier.dart';
 import 'package:notes/dialogs/note_dialog.dart';
 import 'package:notes/models/note.dart';
+import 'package:provider/provider.dart';
 
 
 
@@ -40,6 +42,9 @@ class _NotesPageState extends State<NotesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<NoteChangeNotifier>();
+    final notes = controller.notes;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Poznámky"),
@@ -61,7 +66,7 @@ class _NotesPageState extends State<NotesPage> {
               children: [
                 Expanded(
                   child: TextField(
-                    onChanged: search,
+                    onChanged: controller.search,
                     decoration: const InputDecoration(
                       hintText: "Hledat…",
                       prefixIcon: Icon(Icons.search),
@@ -112,9 +117,9 @@ class _NotesPageState extends State<NotesPage> {
           const Divider(),
           Expanded(
             child: ListView.builder(
-              itemCount: filteredNotes.length,
+              itemCount: notes.length,
               itemBuilder: (_, i) {
-                final note = filteredNotes[i];
+                final note = notes[i];
                 return Column(
                   children: <Widget>[
                     ListTile(
@@ -196,6 +201,7 @@ class _NotesPageState extends State<NotesPage> {
             context: context,
             builder: (context) => NoteDialog(
               onSave: (title, content) async {
+                controller.add(Note(title: "Ahoj", content: "Test"));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text("Added: $title")),
                 );
