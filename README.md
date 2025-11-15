@@ -13,4 +13,3 @@ A simple and elegant Flutter notes application with local storage using Hive dat
 - **Czech Localization** - Full UI in Czech language
 - **Note Counter** - View total number of notes in the app bar
 - **Timestamps** - Automatic creation and update timestamps for each note
-- 
