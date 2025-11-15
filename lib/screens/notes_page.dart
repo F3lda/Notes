@@ -44,6 +44,67 @@ class _NotesPageState extends State<NotesPage> {
     return null; // indeterminate
   }
 
+  void showEditDialog(BuildContext context, Note note, NoteChangeNotifier controller) {
+    showDialog(
+      context: context,
+      builder: (context) => NoteDialog(
+        initialTitle: note.title,
+        initialContent: note.content,
+        onSave: (title, content) async {
+          final updatedNote = note.copyWith(
+            title: title,
+            content: content,
+          );
+          await controller.update(note.key, updatedNote);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                duration: const Duration(seconds: 2),
+                content: Text("Poznámka '$title' byla upravena"),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> showDeleteDialog(BuildContext context, Note note, NoteChangeNotifier controller) async {
+    final bool? shouldDelete = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Smazat poznámku'),
+        content: Text('Opravdu chcete smazat poznámku: ${note.title}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Zrušit'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Smazat'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      await controller.delete(note.key);
+      setState(() {
+        selectedNotes.remove(note.key);
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 2),
+            content: Text("Poznámka '${note.title}' byla smazána"),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<NoteChangeNotifier>(
@@ -146,74 +207,79 @@ class _NotesPageState extends State<NotesPage> {
 
                       return Column(
                         children: <Widget>[
-                          ListTile(
-                            title: Text(note.title),
-                            subtitle: Text(note.content),
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => NoteDialog(
-                                  initialTitle: note.title,
-                                  initialContent: note.content,
-                                  onSave: (title, content) async {
-                                    // Update note using update method
-                                    final updatedNote = note.copyWith(
-                                      title: title,
-                                      content: content,
-                                    );
-                                    await controller.update(note.key, updatedNote);
-                                    if (context.mounted) {
-                                      //Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: const Duration(seconds: 2), content: Text("Poznámka '$title' byla upravena")),);
-                                    }
-                                  },
-                                ),
-                              );
+                          Dismissible(
+                            key: ValueKey(note.key),
+                            confirmDismiss: (direction) async {
+                              if (direction == DismissDirection.startToEnd) {
+                                // Edit action (swipe from left)
+                                showEditDialog(context, note, controller);
+                                return false; // Don't dismiss the item
+                              } else if (direction == DismissDirection.endToStart) {
+                                // Delete action (swipe from right)
+                                await showDeleteDialog(context, note, controller);
+                                return false; // Don't dismiss the item, we handle deletion manually
+                              }
+                              return false;
                             },
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title:
-                                        const Text('Smazat poznámku'),
-                                        content: Text('Opravdu chcete smazat poznámku: ${note.title}?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text('Zrušit'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () async {
-                                              Navigator.pop(context);
-                                              await controller.delete(note.key);
-                                              setState(() {
-                                                selectedNotes.remove(note.key);
-                                              });
-                                              if (context.mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(duration: const Duration(seconds: 2), content: Text("Poznámka '${note.title}' byla smazána")),);
-                                              }
-                                            },
-                                            style: TextButton.styleFrom(foregroundColor: Colors.red),
-                                            child: const Text('Smazat'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                Checkbox(
-                                  value: isSelected,
-                                  onChanged: (value) {
-                                    toggleNoteSelection(note.key, notes);
-                                  },
-                                ),
-                              ],
+                            onDismissed: (direction) {
+                              // We handle everything in confirmDismiss, so this is empty
+                            },
+                            background: Container(
+                              color: Colors.blue,
+                              alignment: Alignment.center,
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(width: 20),
+                                  Icon(Icons.edit, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Upravit',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            secondaryBackground: Container(
+                              color: Colors.red,
+                              alignment: Alignment.center,
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Smazat',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.delete, color: Colors.white),
+                                  SizedBox(width: 20),
+                                ],
+                              ),
+                            ),
+                            child: ListTile(
+                              title: Text(note.title),
+                              subtitle: Text(note.content),
+                              onTap: () {
+                                showEditDialog(context, note, controller);
+                              },
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () {
+                                      showDeleteDialog(context, note, controller);
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Checkbox(
+                                    value: isSelected,
+                                    onChanged: (value) {
+                                      toggleNoteSelection(note.key, notes);
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           const Divider(),
