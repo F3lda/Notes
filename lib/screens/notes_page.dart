@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:notes/dialogs/note_dialog.dart';
 import 'package:notes/models/note.dart';
 
 
@@ -70,7 +71,29 @@ class _NotesPageState extends State<NotesPage> {
                 const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {},
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Smazat poznámku'),
+                        content: Text('Opravdu chcete smazat označené poznámky?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Zrušit'),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              Navigator.pop(context);
+
+                            },
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            child: const Text('Smazat'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(width: 8),
                 Checkbox(
@@ -98,9 +121,18 @@ class _NotesPageState extends State<NotesPage> {
                       title: Text(note.title),
                       subtitle: Text(note.content),
                       onTap: () {
-                        // Handle tile tap, e.g., navigate to note detail page
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Tapped on ${note.title}")),
+                        showDialog(
+                          context: context,
+                          builder: (context) => NoteDialog(
+                            initialTitle: note.title,
+                            initialContent: note.content,
+                            onSave: (title, content) async {
+                              // Handle tile tap, e.g., navigate to note detail page
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Tapped on ${note.title}")),
+                              );
+                            },
+                          ),
                         );
                       },
                       trailing: Row(
@@ -109,13 +141,35 @@ class _NotesPageState extends State<NotesPage> {
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
-                              setState(() {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Smazat poznámku'),
+                                  content: Text('Opravdu chcete smazat poznámku: ${note.title}?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Zrušit'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+
+                                      },
+                                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                      child: const Text('Smazat'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              /*setState(() {
                                 allNotes.remove(note);
                                 filteredNotes.remove(note);
                               });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text("Item deleted")),
-                              );
+                              );*/
                             },
                           ),
                           const SizedBox(width: 8),
@@ -137,7 +191,18 @@ class _NotesPageState extends State<NotesPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => NoteDialog(
+              onSave: (title, content) async {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Added: $title")),
+                );
+              },
+            ),
+          );
+        },
         tooltip: 'Přidat',
         child: const Icon(Icons.add),
       ),
